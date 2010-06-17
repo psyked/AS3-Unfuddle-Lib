@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:HBox xmlns:mx="http://www.adobe.com/2006/mxml" initialize="init();">
+<mx:Script>
+	<![CDATA[
+		import mx.events.ListEvent;
+		import couk.psyked.unfuddle.ProjectModel;
+		import couk.psyked.unfuddle.UnfuddleUtil;
+		import couk.psyked.unfuddle.UnfuddleURI;
+		
+		[Bindable]
+	    public var _projects:ProjectModel = new ProjectModel();
+	    
+	    private function init():void {
+	    	getAllProjects();
+	    }
+	        
+		private function getAllProjects():void {
+			var c:UnfuddleUtil = new UnfuddleUtil(UnfuddleURI.PROJECTS_URL);
+				c.getDetails(this._projects);
+			this.dispatchEvent(new ListEvent(ListEvent.CHANGE));
+		}
+		
+		private function updateActiveProject(e:ListEvent):void {
+			UnfuddleURI.projectid = uint(((e.target as ComboBox).selectedItem as ProjectModel).id);
+		}
+			
+	]]>
+</mx:Script>
+	<mx:ComboBox width="100%" height="27" dataProvider="{this._projects}" labelField="title" change="updateActiveProject(event);"></mx:ComboBox>
+	<mx:Button label="Refresh" click="getAllProjects();" height="27"/>
+	
+</mx:HBox>

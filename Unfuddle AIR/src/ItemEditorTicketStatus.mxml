@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:Canvas xmlns:mx="http://www.adobe.com/2006/mxml" width="126" minHeight="30">
+<mx:Script>
+	<![CDATA[
+		import couk.psyked.unfuddle.TicketModel;
+		import mx.collections.ArrayCollection;
+		
+		[Bindable]
+		private var _newStatus:ArrayCollection = new ArrayCollection(TicketModel.STATUS_OPTIONS);
+	    
+	    public var text:String;
+	    	    
+	    private function updateValue():void {
+	    	this.text = this.new_status.text;
+	    }
+	]]>
+</mx:Script>
+	<mx:ComboBox id="new_status" dataProvider="{_newStatus}" change="updateValue();" left="2" top="2" height="25" right="2"></mx:ComboBox>
+</mx:Canvas>

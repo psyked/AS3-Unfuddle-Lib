@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:Window xmlns:mx="http://www.adobe.com/2006/mxml" layout="absolute" width="400" height="300" 
+		   xmlns:ns1="*" verticalScrollPolicy="off" horizontalScrollPolicy="off" showStatusBar="false"
+		   title="Project Status" initialize="init();">
+		   <mx:Script>
+		   	<![CDATA[
+		   		import couk.psyked.unfuddle.ActivityCollection;
+		   		import couk.psyked.unfuddle.UnfuddleUtil;
+		   		import couk.psyked.unfuddle.UnfuddleURI;
+		   		import mx.events.ListEvent;
+		   		
+		   		[Bindable]
+		   		private var _activity:ActivityCollection = new ActivityCollection();
+		   		
+		   		private function init():void {
+		   			this.projects.addEventListener(ListEvent.CHANGE, onListEvent);
+		   			//this.dispatchEvent(new ListEvent(ListEvent.CHANGE));
+		   		}
+		   		
+		   		private function onListEvent(e:ListEvent):void {
+		   			//trace("onListEvent");
+					var c:UnfuddleUtil = new UnfuddleUtil(UnfuddleURI.ACTIVITY_URL);
+						c.getDetails(this._activity);
+					//this.dispatchEvent(new ListEvent(ListEvent.CHANGE));
+				}
+				
+		   	]]>
+		   </mx:Script>
+	<ns1:ProjectSelector left="10" right="10" top="10" id="projects">
+	</ns1:ProjectSelector>
+	<mx:List top="47" left="10" right="10" bottom="10" itemRenderer="ProjectActivityItemRenderer" dataProvider="{this._activity.items}"></mx:List>
+</mx:Window>

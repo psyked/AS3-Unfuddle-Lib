@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<update xmlns="http://ns.adobe.com/air/framework/update/description/1.0">
+  <version>v0.3 alpha</version>
+  <url>http://www.psyked.co.uk/airapps/ufDashboard03.air</url>
+  <description><![CDATA[Unfuddle AIR application alpha 3:
+*  Extended datagrids for all views, added dropdown editors for a few fields.
+Unfuddle AIR application alpha 2:
+*  Updates to the Tickets screen (delete button works and dropdown on ticket status).
+Unfuddle AIR application alpha 1:
+*  Initial release.]]></description>
+</update>

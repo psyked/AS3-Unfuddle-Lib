@@ -1,0 +1,315 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:WindowedApplication xmlns:mx="http://www.adobe.com/2006/mxml" xmlns:net="flash.net.*" xmlns:display="flash.display.*"
+						layout="absolute" initialize="init();" width="800" height="600" showStatusBar="false"
+						title="Unfuddle Dashboard" viewSourceURL="srcview/index.html">
+	<mx:Style source="/skin/yflexskin.css" />
+	<mx:Script>
+		<![CDATA[
+			import mx.events.ListEvent;
+			import couk.psyked.unfuddle.MilestoneModel;
+			import couk.psyked.air.ApplicationInfo;
+			import mx.binding.utils.BindingUtils;
+			import couk.psyked.air.ApplicationConfig;
+			import couk.psyked.unfuddle.MilestoneCollection;
+			import couk.psyked.unfuddle.MessageCollection;
+			import couk.psyked.unfuddle.MessageModel;
+			import mx.controls.dataGridClasses.DataGridItemRenderer;
+			import mx.events.DataGridEvent;
+			import mx.collections.ArrayCollection;
+			import couk.psyked.unfuddle.TicketModel;
+			import couk.psyked.unfuddle.UnfuddleURI;
+			import couk.psyked.unfuddle.TicketCollection;
+			import couk.psyked.unfuddle.UnfuddleUtil;
+			import couk.psyked.unfuddle.AuthCredentials;
+			import couk.psyked.unfuddle.ProjectModel;
+	        import air.update.ApplicationUpdaterUI;
+			import air.update.events.UpdateEvent;
+			import com.google.analytics.GATracker;
+            import com.google.analytics.AnalyticsTracker;
+			import com.google.analytics.core.TrackerMode;       
+	        
+	        [Bindable]
+	        public var _projects:ProjectModel = new ProjectModel();
+	        [Bindable]
+	        public var _tickets:TicketCollection = new TicketCollection();
+	        [Bindable]
+	        public var _messages:MessageCollection = new MessageCollection();
+	        [Bindable]
+	        public var _milestones:MilestoneCollection = new MilestoneCollection();
+	        
+	        [Bindable]
+	        private var _newStatus:ArrayCollection = new ArrayCollection(TicketModel.STATUS_OPTIONS);
+	        
+	        [Bindable]
+	        public var _username:String;
+	        [Bindable]
+	        public var _password:String;
+	        [Bindable]
+	        public var _account:String;
+	        
+	        public var updater:ApplicationUpdaterUI = new ApplicationUpdaterUI();
+	        private var settings:ApplicationConfig = new ApplicationConfig();
+	
+	        private function init():void{
+	        	
+	        	BindingUtils.bindProperty(this, "_account", this.accounttext, "text");
+	        	BindingUtils.bindProperty(this, "_username", this.usernametext, "text");
+	        	BindingUtils.bindProperty(this, "_password", this.passwordtext, "text");
+	        	
+	        	BindingUtils.bindSetter(changeAccount, this, "_account");
+				BindingUtils.bindSetter(changeUsername, this, "_username");
+				BindingUtils.bindSetter(changePassword, this, "_password");
+				
+				_account = ApplicationConfig.getSetting("account");
+	        	_username = ApplicationConfig.getSetting("username");
+	        	_password = ApplicationConfig.getSetting("password");
+	        	
+	        	UnfuddleURI.projectid = 1;
+				
+				updater.configurationFile = File.applicationDirectory.resolvePath("config/updaterConfig.xml");
+                updater.addEventListener( UpdateEvent.INITIALIZED, updaterInitialized );
+                updater.initialize();
+                
+                getProjectTickets();
+                getAllMilestones();
+				getAllMessages();
+				getAllProjects();
+				
+				//this._milestones.items.filterFunction = filterMilestones
+	        }
+	        
+	        private function changeAccount(str:String):void {
+	        	if(str != "") {
+	        		//trace("changeAccount = "+str);
+	        		UnfuddleUtil.account = str;
+	        		ApplicationConfig.setSetting("account", str);
+	        	}
+	        }
+	        
+	        private function changePassword(str:String):void {
+	        	if(str != "") {
+	        		//trace("changePassword = "+str);
+	        		AuthCredentials.password = str;
+	        		ApplicationConfig.setSetting("password", str);
+	        	}
+	        }
+	        
+	        private function changeUsername(str:String):void {
+	        	if(str != "") {
+	        		//trace("changeUsername = "+str);
+	        		AuthCredentials.username = str;
+	        		ApplicationConfig.setSetting("username", str);
+	        	}
+	        }
+	        
+	        private function updaterInitialized(e:UpdateEvent):void {
+	        	updater.checkNow();
+	        }
+	        
+	        private var projectFeed:ProjectStatus;
+	        
+	        private function openProjectUpdates():void {
+	        	if(projectFeed == null){
+	        		projectFeed = new ProjectStatus();
+	        		projectFeed.open();
+	        		projectFeed.addEventListener(Event.CLOSE, function() {
+	        			projectFeed = null;
+	        		});
+	        	} else {
+	        		projectFeed.nativeWindow.orderToFront();
+	        	}
+	        }
+	        
+	        //private function filterMilestones(item:Object):Boolean {
+	        	//var a:MilestoneModel = item as MilestoneModel;
+	        		//a.id == 4;
+	        	//return a.id == "4";
+	        //}
+	        
+	        //private function getProjects():void {
+	        	//srv.url = "http://psyked.unfuddle.com/api/v1/projects.xml?formatted=true";
+	        	//srv.send();
+	        //}
+	        
+	        //private function getProjectInfo():void {
+	        	//srv.url = "http://psyked.unfuddle.com/api/v1/projects/1/activity.xml?formatted=true";
+	        	//srv.send();
+	        //}
+	        
+	        private function getProjectTickets():void {
+	        	var c:UnfuddleUtil = new UnfuddleUtil(UnfuddleURI.TICKETS_URL);
+	        		c.getDetails(this._tickets);
+	        }
+	        
+	        private function addNewTicket():void {
+	        	var c:UnfuddleUtil = new UnfuddleUtil(UnfuddleURI.TICKETS_URL);
+	  			var newTicket:TicketModel = new TicketModel();
+	  				newTicket.status = this.new_status.selectedItem.toString();
+	  				newTicket.summary = this.new_summary.text
+	  				newTicket.description = this.new_description.text;
+	  				newTicket.priority = "1";
+	  			c.postDetails(newTicket.toXML());
+	    	}
+			
+			private function getAllProjects():void {
+				var c:UnfuddleUtil = new UnfuddleUtil(UnfuddleURI.PROJECTS_URL);
+					c.getDetails(this._projects);
+			}
+			
+			private function getAllMessages():void {
+				var c:UnfuddleUtil = new UnfuddleUtil(UnfuddleURI.MESSAGES_URL);
+					c.getDetails(this._messages);
+			}
+			
+			private function getAllMilestones():void {
+				var c:UnfuddleUtil = new UnfuddleUtil(UnfuddleURI.MILESTONES_URL);
+					c.getDetails(this._milestones);
+			}
+			
+			private function onEditItem(e:DataGridEvent):void {
+				var newTicket:TicketModel = DataGrid(e.currentTarget).dataProvider[e.rowIndex];
+					//trace(e.dataField);
+					//trace(DataGridItemRenderer(e.itemRenderer).text);
+					//trace(TextInput(e.currentTarget.itemEditorInstance).text);
+					//trace("newTicket["+e.dataField+"]", newTicket[e.dataField])
+					//trace(typeof(e.currentTarget.itemEditorInstance))
+					//try {
+					//get the data grid component 
+				    var dataGrid:DataGrid = e.target as DataGrid; 
+				    //get the column object 
+				    var col:DataGridColumn = dataGrid.columns[e.columnIndex]; 
+				    //use the column object and data grid itemEditorInstance property to retrieve the new value 
+				    var newValue:String = dataGrid.itemEditorInstance[col.editorDataField]; 
+					//var a:String = e.currentTarget.itemEditorInstance[DataGrid(e.target).columns]
+					//var a:String = TextInput(e.currentTarget.itemEditorInstance).text;
+					//trace(newValue)
+					newTicket[e.dataField] = newValue;
+					//} catch (e:*) {}
+					
+					//trace("newTicket["+e.dataField+"]", newTicket[e.dataField])
+					//trace(newTicket.toXML())
+					//newTicket.status = DataGrid(e.currentTarget).r[2];
+					//trace(ArrayCollection(DataGrid(e.currentTarget).dataProvider).getItemAt(e.rowIndex).summary);
+	  			UnfuddleURI.itemid = newTicket.toXML()..id;
+	  			var c:UnfuddleUtil = new UnfuddleUtil(UnfuddleURI.SINGLE_TICKET_URL);
+	  				c.putDetails(newTicket.toXML());
+			}
+			
+			private function updateActiveProject(e:ListEvent):void {
+				UnfuddleURI.projectid = uint(((e.target as ComboBox).selectedItem as ProjectModel).id);
+			}
+			
+			//private function onDeleteItem(e:Event):void {
+			//	
+			//}
+			
+		]]>
+	</mx:Script>
+	<mx:TabNavigator left="10" right="10" top="90" bottom="10">
+		<mx:Canvas label="Project" width="100%" height="100%">
+			<mx:DataGrid left="10" right="10" top="40" bottom="10" id="projectsDG" dataProvider="{this._projects}" variableRowHeight="true">
+				<mx:columns>
+					<mx:DataGridColumn headerText="Project ID" dataField="id"/>
+					<mx:DataGridColumn headerText="Title" dataField="title"/>
+					<mx:DataGridColumn headerText="Short Name" dataField="shortName"/>
+					<mx:DataGridColumn headerText="Size (Kb)" dataField="size"/>
+					<mx:DataGridColumn headerText="Description" dataField="description"/>
+					<mx:DataGridColumn headerText="Updated At" dataField="updatedAt"/>
+					<mx:DataGridColumn headerText="Created At" dataField="createdAt"/>
+					<mx:DataGridColumn headerText="Account ID" dataField="accountId"/>
+					<mx:DataGridColumn headerText="Archived?" dataField="archived"/>
+					<mx:DataGridColumn headerText="Time Tracking?" dataField="enableTimeTracking"/>
+					<mx:DataGridColumn headerText="Colour Scheme" dataField="theme"/>
+				</mx:columns>
+			</mx:DataGrid>
+			<mx:Button x="338" label="Refresh" click="getAllProjects();" height="27" y="0"/>
+			<mx:ComboBox x="10" y="0" width="320" height="27" dataProvider="{this._projects}" labelField="title" change="updateActiveProject(event);"></mx:ComboBox>
+		</mx:Canvas>
+		<mx:Canvas label="Tickets" width="100%" height="100%" id="ticket">
+			<mx:Button x="338" y="0" label="Refresh" click="getProjectTickets();"/>
+			<mx:VBox left="10" right="10" top="40" bottom="10">
+				<mx:DataGrid dataProvider="{this._tickets.items}" width="100%" height="50%" editable="true" 
+							 itemEditEnd="onEditItem(event);" rowHeight="32" variableRowHeight="true">
+					<mx:columns>
+						<mx:DataGridColumn headerText="Number" dataField="number"/>
+						<mx:DataGridColumn headerText="Summary" dataField="summary"/>
+						<mx:DataGridColumn headerText="Assignee" dataField="assigneeId"/>
+						<mx:DataGridColumn headerText="Component" dataField="componentId"/>
+						<mx:DataGridColumn headerText="Created at" dataField="createdAt"/>
+						<mx:DataGridColumn headerText="Due on" dataField="dueOn"/>
+						<mx:DataGridColumn headerText="Milestone" dataField="milestoneId" itemRenderer="ItemRendererMilestone" itemEditor="ItemEditorMilestone" width="105"/>
+						<mx:DataGridColumn headerText="Priority" dataField="priority"/>
+						<mx:DataGridColumn headerText="Resolution" dataField="resolution"/>
+						<mx:DataGridColumn headerText="Resolution description" dataField="resolutionDescription"/>
+						<mx:DataGridColumn headerText="Severity" dataField="severityId"/>
+						<mx:DataGridColumn headerText="Status" dataField="status" itemEditor="ItemEditorTicketStatus"/>
+						<mx:DataGridColumn headerText="Description" dataField="description"/>
+						<mx:DataGridColumn headerText="Delete?" editable="false" itemRenderer="ItemRendererDeleteTicket" width="105">
+						</mx:DataGridColumn>
+					</mx:columns>
+				</mx:DataGrid>
+				<mx:HBox width="100%">
+					<mx:Label text="Ticket Status" width="120"/>
+					<mx:ComboBox id="new_status" dataProvider="{_newStatus}"></mx:ComboBox>
+				</mx:HBox>
+				<mx:HBox width="100%">
+					<mx:Label text="Ticket Summary" width="120"/>
+					<mx:TextInput width="100%" id="new_summary"/>
+				</mx:HBox>
+				<mx:HBox width="100%">
+					<mx:Label text="Ticket Description" width="120"/>
+					<mx:TextArea height="120" width="100%" id="new_description"/>
+				</mx:HBox>
+				<mx:HBox width="100%">
+					<mx:HBox width="100%" horizontalAlign="right">
+						<mx:Button label="Add new ticket" click="addNewTicket();"/>
+					</mx:HBox>
+				</mx:HBox>
+			</mx:VBox>
+			<mx:ComboBox x="10" y="0" width="320" height="27" dataProvider="{this._projects}" labelField="title" change="updateActiveProject(event);"></mx:ComboBox>
+		</mx:Canvas>
+		<mx:Canvas label="Messages" width="100%" height="100%">
+			<mx:DataGrid left="10" right="10" top="40" bottom="10" id="messagesDG" dataProvider="{this._messages.items}" variableRowHeight="true">
+				<mx:columns>
+					<mx:DataGridColumn headerText="Author ID" dataField="authorid"/>
+					<mx:DataGridColumn headerText="Body" dataField="body"/>
+					<mx:DataGridColumn headerText="Created At" dataField="createdat"/>
+					<mx:DataGridColumn headerText="Message ID" dataField="id"/>
+					<mx:DataGridColumn headerText="Project ID" dataField="projectid"/>
+					<mx:DataGridColumn headerText="Title" dataField="title"/>
+					<mx:DataGridColumn headerText="Updated At" dataField="updatedat"/>
+				</mx:columns>
+			</mx:DataGrid>
+			<mx:Button x="338" y="0" label="Refresh" click="this.getAllMessages();"/>
+			<mx:ComboBox x="10" y="0" width="320" height="27" dataProvider="{this._projects}" labelField="title" change="updateActiveProject(event);"></mx:ComboBox>
+		</mx:Canvas>
+		<mx:Canvas label="Milestones" width="100%" height="100%">
+			<mx:DataGrid left="10" right="10" top="40" bottom="10" id="milestonesDG" dataProvider="{this._milestones.items}" variableRowHeight="true">
+				<mx:columns>
+					<mx:DataGridColumn headerText="Archived" dataField="archived"/>
+					<mx:DataGridColumn headerText="Completed" dataField="completed"/>
+					<mx:DataGridColumn headerText="Created At" dataField="createdat"/>
+					<mx:DataGridColumn headerText="Due on" dataField="dueon"/>
+					<mx:DataGridColumn headerText="ID" dataField="id"/>
+					<mx:DataGridColumn headerText="Person responsible ID" dataField="personresponsibleid"/>
+					<mx:DataGridColumn headerText="Project ID" dataField="projectid"/>
+					<mx:DataGridColumn headerText="Title" dataField="title"/>
+					<mx:DataGridColumn headerText="Updated At" dataField="updatedat"/>
+				</mx:columns>
+			</mx:DataGrid>
+			<mx:Button x="338" y="0" label="Refresh" click="this.getAllMilestones();"/>
+			<mx:ComboBox x="10" y="0" width="320" height="27" dataProvider="{this._projects}" labelField="title" change="updateActiveProject(event);"></mx:ComboBox>
+		</mx:Canvas>
+	</mx:TabNavigator>
+	<mx:Image x="12" y="10" source="@Embed('images/unfuddle_logo.png')" width="270" height="74" scaleContent="false"/>
+	<mx:TextInput id="usernametext" text="{this._username}" height="23" width="220" right="11" top="37" />
+	<mx:TextInput id="passwordtext" text="{this._password}" height="23" width="220" right="11" top="64" />
+	<mx:Label text="Username:" textAlign="right" width="90" right="231" top="39"/>
+	<mx:TextInput id="accounttext" text="{this._account}" height="23" width="100" right="97" top="10" />
+	<mx:Label text="Account:" textAlign="right" width="90" right="231" top="12"/>
+	<mx:Label text="Password:" textAlign="right" width="90" right="231" top="66"/>
+	<mx:Label text=".unfuddle.com/" fontWeight="bold" right="10" top="12"/>
+	<mx:Label text="http://" fontWeight="bold" right="195" top="12"/>
+	<mx:Label x="276" y="15" text="{ApplicationInfo.appVersion}" width="120" fontSize="9" fontWeight="bold" color="#FFFFFF"/>
+	<mx:Button x="276" y="38" label="Open Project Updates Feed" click="openProjectUpdates();"/>
+</mx:WindowedApplication>

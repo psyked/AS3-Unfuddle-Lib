@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:Canvas xmlns:mx="http://www.adobe.com/2006/mxml" width="100" verticalScrollPolicy="off" horizontalScrollPolicy="off">
+	<mx:Script>
+		<![CDATA[
+			import couk.psyked.unfuddle.UnfuddleURI;
+			import couk.psyked.unfuddle.UnfuddleUtil;
+			import couk.psyked.unfuddle.TicketModel;
+			//override protected function updateDisplayList(unscaledWidth:Number, unscaledHeight:Number):void {
+				//super.updateDisplayList(unscaledWidth, unscaledHeight);
+				//this.delete_btn.label = TicketModel(data).id.toString();
+			//}
+			
+			private function deleteTicket():void {
+				UnfuddleURI.itemid = TicketModel(data).id;
+				var c:UnfuddleUtil = new UnfuddleUtil(UnfuddleURI.SINGLE_TICKET_URL);
+					c.deleteDetails();
+			}
+		]]>
+	</mx:Script>
+	<mx:Button id="delete_btn" label="Delete Ticket"  left="3" right="3" top="0" click="deleteTicket();"/>
+</mx:Canvas>

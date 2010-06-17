@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:Canvas xmlns:mx="http://www.adobe.com/2006/mxml" verticalScrollPolicy="off" horizontalScrollPolicy="off">
+<mx:Script>
+	<![CDATA[
+		import couk.psyked.unfuddle.MilestoneModel;
+		import mx.events.ListEvent;
+		import couk.psyked.unfuddle.TicketModel;
+		import mx.collections.ArrayCollection;
+		
+		public var text:String;
+		
+		override public function set data(value:Object):void {
+		    super.data = value;
+		    var item:MilestoneModel;
+		    for each(item in this.new_milestone.dataProvider) {
+				if(item.id == (value as TicketModel).milestoneId) {
+					this.new_milestone.selectedItem = item;
+					this.text = item.id;
+					break;
+				}
+			}
+		}
+	]]>
+</mx:Script>
+	<mx:ComboBox id="new_milestone" dataProvider="{main(this.parentApplication)._milestones.items}" left="2" top="2" right="2" 
+				 labelField="title" editable="false"></mx:ComboBox>
+</mx:Canvas>

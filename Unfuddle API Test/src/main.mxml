@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:Application xmlns:mx="http://www.adobe.com/2006/mxml" layout="absolute" initialize="init();" creationComplete="srv.send();">
+	<mx:Script>
+		<![CDATA[
+			//import mx.utils.ObjectUtil;
+			import mx.rpc.events.ResultEvent;
+			import mx.rpc.events.FaultEvent;
+			//import com.dynamicflash.util.Base64;
+			
+			import mx.utils.Base64Encoder;
+	        //import mx.controls.Alert;
+	
+	        private var baseUrl:String = "http://phprestsql.sourceforge.net/tutorial/user";
+	        private var auth:String = "james:redscorpion11";
+	
+	        private function init():void{
+	            var encoder : Base64Encoder = new Base64Encoder();
+	            encoder.encode(auth);
+	            srv.headers["Authorization"] = "Basic " + encoder.toString();
+	            srv.headers["Accept"] = "application/xml";
+	            srv.headers["Content-type"] = "application/xml";
+	            //deleteUser();
+	        }
+			
+			private function onSuccess(e:ResultEvent):void {
+				//trace(e.headers)
+				trace(e.statusCode)
+				trace("Success");
+				trace(e.result);
+				trace(XML(e.result)..title)
+				//trace(XML(ObjectUtil.toString(e.result)));
+			}
+			
+			private function onFault(e:FaultEvent):void {
+				trace(e.message);
+				trace("Fault");
+			}
+			
+			//private var header1:URLRequestHeader = new URLRequestHeader("Authorization",'Basic ' + Base64.encode('james:redscorpion11'));
+			//private var header2:URLRequestHeader = new URLRequestHeader("Accept",'application/xml');
+			//private var header3:URLRequestHeader = new URLRequestHeader("Content-type",'application/xml');			 
+			
+			//private var headers:Array = new Array(header1, header2, header3);
+			
+			/* Authorization (i.e. “Authorization: Basic <base64encodedcredentials>)
+			Accept (i.e. “Accept: application/xml”)
+			Content-type (i.e. “Content-type: application/xml”) */ 
+		]]>
+	</mx:Script>
+	<mx:HTTPService id="srv" method="GET" url="http://psyked.unfuddle.com/api/v1/projects.xml?formatted=true" 
+					result="onSuccess(event);" fault="onFault(event);" resultFormat="e4x">
+	</mx:HTTPService>
+</mx:Application>

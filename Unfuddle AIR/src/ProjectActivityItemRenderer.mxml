@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:Canvas xmlns:mx="http://www.adobe.com/2006/mxml" width="100%" height="60">
+	<mx:Script>
+		<![CDATA[
+			import couk.psyked.unfuddle.ActivityModel;	
+		]]>
+	</mx:Script>
+	<mx:Label x="10" y="10" text="{ActivityModel(this.data).recordtype}"/>
+	
+</mx:Canvas>
